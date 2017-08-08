@@ -4,33 +4,29 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from termcolor import colored
 
-#Opening xlsx file and reading the gene1 column as keys and gene2 column as values
+#Making network from biological pathways
 data = open_workbook("pathway_data.xlsx")
 sheet = data.sheet_by_index(0)
 col_keys = sheet.col_values(0)
 col_values = sheet.col_values(1)
-#zipping both lists and combining them
 key_values = zip(col_keys, col_values)
 mgraph = dict()
 keys = []
-#for each set of values in combined list, we are storing lst list as keys and 2nd list as values
 for line in key_values:
     key = line[0]
     value = line[1]
-#if each key is present in graph dictionary, then append the new number to exsisting array
     if line[0] in mgraph:
         mgraph[line[0]].append(line[1])
-#else we create a new array here
     else:
          mgraph[line[0]] = [line[1]]
 
-#method to find nodes, edges and calculate degree of genes/nodes in pathway network
+#Function to find nodes, edges and calculate degree of genes/nodes in pathway network
 def find_degree():
     g = mgraph
     G = nx.DiGraph(g)
     total = G.degree()
 
-#method to map mutation data and remove upstream nodes of mutated genes
+#Function to map mutation data and remove upstream nodes of mutated genes
 def remove_mut_ge(n,mu):
     G = nx.DiGraph(mgraph)
     list_nodes = []
@@ -40,7 +36,6 @@ def remove_mut_ge(n,mu):
     for node, mut in dic.items():
         if mut > 1:
             list_nodes.append(node)
-    #print list_nodes
     for i in range(len(list_nodes)):
         try:
             remove = G.predecessors(list_nodes[i])
@@ -52,6 +47,7 @@ def remove_mut_ge(n,mu):
     new_G = nx.DiGraph(G)
     return new_G
 
+#Function to map the gene expression and copy number variation onto the network to find targets
 def ge_cnv(n,ge,cnv,mut):
     removed_graph = remove_mut_ge(n,mut)
     col_nodes = n
@@ -71,6 +67,7 @@ def ge_cnv(n,ge,cnv,mut):
             continue
     return list_targets
 
+#Function to find drugs for identified targets
 def drug_lists(n,ge,cnv,mut):
     targets = ge_cnv(n,ge,cnv,mut)
     drug_targets = open_workbook("drug_data.xlsx")
@@ -87,6 +84,7 @@ def drug_lists(n,ge,cnv,mut):
         except UnicodeEncodeError:
             continue
 
+#Main function
 if __name__ == "__main__":
     find_degree()
     book = xlrd.open_workbook('patient_data.xlsx')
